@@ -92,13 +92,14 @@ def TakeImages():
 
                 cv2.imshow('frame',img)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(20) & 0xFF == ord('q') or sampleNum==100: #or sampleNum==100
                 break
             elif sampleNum>100: #luu anh cho den khi dc 100 anh
                 break
         cam.release()
         cv2.destroyAllWindows()
         res = "Ảnh đã được lưu với ID : " + Id +" - Tên : "+ name
+        print(sampleNum+ " ảnh đã được lưu với ID : " + Id +" - Tên : "+ name)
         row = [Id , name]
         with open('StudentDetails\StudentDetails.csv','a+') as csvFile:
             writer = csv.writer(csvFile)
@@ -120,8 +121,11 @@ def TrainImages():
     #Lấy các khuôn mặt và ID từ thư mục TrainingImage
     faces,Id = getImagesAndLabels("TrainingImage")
     #Train model để trích xuất đặc trưng các khuôn mặt và gán
-    recognizer.train(faces, np.array(Id))
+    recognizer.train(faces, np.array(Id)) #creact & traing model
     recognizer.save("TrainingImageLabel\Trainner.yml") # lưu model mới train vào thư mục
+    print("-----------")
+    print("Hoàn thành huấn luyện mô hình")
+    print("-----------")
     res = "Train thành công" #+",".join(str(f) for f in Id)
     message.configure(text= res)
 
@@ -146,6 +150,8 @@ def getImagesAndLabels(path):
         Ids.append(Id)
     return faces,Ids
 
+acc=[] #nhum acurr
+
 def TrackImages():
     recognizer = cv2.face.LBPHFaceRecognizer_create()#cv2.createLBPHFaceRecognizer() #nhum: pip install opencv-contrib-python
     recognizer.read("TrainingImageLabel\Trainner.yml")
@@ -155,13 +161,23 @@ def TrackImages():
     cam = cv2.VideoCapture(0)
     font = cv2.FONT_HERSHEY_SIMPLEX
     col_names =  ['Id','Name','Date','Time']
+
     attendance = pd.DataFrame(columns = col_names)
     while True:
         ret, im =cam.read()
         gray=cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-        faces=faceCascade.detectMultiScale(gray, 1.2,5)
+        faces = faceCascade.detectMultiScale(gray, 1.2, 5)
+
         for(x,y,w,h) in faces:
             cv2.rectangle(im,(x,y),(x+w,y+h),(225,0,0),2)
+
+            # GET ACCURACY NHUM NGUYEN
+            res = recognizer.predict(gray)
+            if(res[1] <500):
+                confidence = float("{0:.2f}".format((100*(1-(res[1])/300))))
+                acc.append(confidence)
+                dis = str(confidence) +"% realtime"
+
             Id, conf = recognizer.predict(gray[y:y+h,x:x+w])
             if(conf < 50):
                 ts = time.time()
@@ -179,9 +195,16 @@ def TrackImages():
                 cv2.imwrite("ImagesUnknown\Image"+str(noOfFile) + ".jpg", im[y:y+h,x:x+w])
             cv2.putText(im,str(tt),(x,y+h), font, 1,(255,255,255),2)
         attendance=attendance.drop_duplicates(subset=['Id'],keep='first')
+
+        # NHUM NGUYEN = Print highest acc
+        print("Realtime acc: " + dis)
+
+
         cv2.imshow('im',im)
         if (cv2.waitKey(1)==ord('q')):
             break
+    print("Highest: " + str((np.max(acc))))
+
     ts = time.time()
     date = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
     timeStamp = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
@@ -193,6 +216,8 @@ def TrackImages():
     #print(attendance)
     res=attendance
     message2.configure(text= res)
+
+#print("Highest: " + str((np.max(acc))))
 
 
 clearButton = tk.Button(window, text="Clear", command=clear  ,fg="#1D3557"  ,bg="#F1FAEE"  ,width=10  ,height=1 ,activebackground = "white" ,font=('times', 15))
