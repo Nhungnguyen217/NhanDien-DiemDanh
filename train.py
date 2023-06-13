@@ -3,14 +3,12 @@ import csv
 import datetime
 import time
 import tkinter as tk
-
 # from tkinter import Message ,Text
 import cv2
 import numpy as np
 import os
 import pandas as pd
 from PIL import Image
-
 # import tkinter.ttk as ttk
 # import tkinter.font as font
 
@@ -21,43 +19,27 @@ window.geometry('1600x900')
 # dialog_title = 'Thoát'
 # dialog_text = 'Bạn muốn thoát?'
 #answer = messagebox.askquestion(dialog_title, dialog_text)
-
 #window.geometry('1280x720')
 window.configure(background='#F1FAEE') #LightBlue4
-
 #window.attributes('-fullscreen', True)
-
 window.grid_rowconfigure(0, weight=1)
 window.grid_columnconfigure(0, weight=1)
-
-
-
 message = tk.Label(window, text="Facial recognition system" ,bg="#E63946"  ,fg="#F1FAEE"  ,width=48  ,height=2,font=('times', 30, 'bold'))
-
 message.place(x=200, y=40)
-
 lbl = tk.Label(window, text="ID",width=20  ,height=2  ,fg="#1D3557"  ,bg="#F1FAEE" ,font=('times', 15, ' bold ') )
 lbl.place(x=400, y=200)
-
 txt = tk.Entry(window,width=30  ,bg="#F1FAEE" ,fg="#1D3557",font=('times', 15, ' bold '))
 txt.place(x=600, y=215)
-
 lbl2 = tk.Label(window, text="Name",width=20  ,fg="#1D3557"  ,bg="#F1FAEE"    ,height=2 ,font=('times', 15, ' bold '))
 lbl2.place(x=400, y=300)
-
 txt2 = tk.Entry(window,width=30 ,bg="#F1FAEE"  ,fg="#1D3557",font=('times', 15, ' bold ')  )
 txt2.place(x=600, y=315)
-
 lbl3 = tk.Label(window, text="Notification: ",width=20  ,fg="#1D3557"  ,bg="#F1FAEE"  ,height=2 ,font=('times', 15, ' bold '))
 lbl3.place(x=400, y=400)
-
 message = tk.Label(window, text="" ,bg="#F1FAEE"  ,fg="#1D3557"  ,width=30  ,height=2, activebackground = "yellow" ,font=('times', 15, ' bold '))
 message.place(x=700, y=400)
-
 lbl3 = tk.Label(window, text="Information: ",width=20  ,fg="#E63946"  ,bg="#F1FAEE"  ,height=2 ,font=('times', 15, ' bold '))
 lbl3.place(x=400, y=650)
-
-
 message2 = tk.Label(window, text="" ,fg="#E63946"   ,bg="#F1FAEE",activeforeground = "green",width=30  ,height=2  ,font=('times', 15, ' bold '))
 message2.place(x=700, y=650)
 
@@ -91,12 +73,14 @@ def TakeImages():
     Id=(txt.get())
     name=(txt2.get())
     if(is_number(Id) and name.isalpha()):
+        print(Id , name)
         cam = cv2.VideoCapture(0)
         harcascadePath = "haarcascade_frontalface_default.xml" # model phát hiện khuôn mặt haarcascade
         detector=cv2.CascadeClassifier(harcascadePath)
         sampleNum=0
         while(True):
             ret, img = cam.read()
+            img = cv2.flip(img, 1)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             faces = detector.detectMultiScale(gray, 1.3, 5)
             for (x,y,w,h) in faces:
@@ -133,17 +117,18 @@ def TrainImages():
     recognizer = cv2.face_LBPHFaceRecognizer.create()
     harcascadePath = "haarcascade_frontalface_default.xml"
     detector =cv2.CascadeClassifier(harcascadePath)
+    #Lấy các khuôn mặt và ID từ thư mục TrainingImage
     faces,Id = getImagesAndLabels("TrainingImage")
+    #Train model để trích xuất đặc trưng các khuôn mặt và gán
     recognizer.train(faces, np.array(Id))
     recognizer.save("TrainingImageLabel\Trainner.yml") # lưu model mới train vào thư mục
-    res = "Train thành công"#+",".join(str(f) for f in Id)
+    res = "Train thành công" #+",".join(str(f) for f in Id)
     message.configure(text= res)
 
 def getImagesAndLabels(path):
     #get the path of all the files in the folder
     imagePaths=[os.path.join(path,f) for f in os.listdir(path)]
-    #print(imagePaths)
-
+    print(imagePaths)
     #create empth face list
     faces=[]
     #create empty ID list
