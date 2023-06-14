@@ -1,27 +1,17 @@
-# import shutil
 import csv
 import datetime
 import time
 import tkinter as tk
-# from tkinter import Message ,Text
 import cv2
 import numpy as np
 import os
 import pandas as pd
 from PIL import Image
-# import tkinter.ttk as ttk
-# import tkinter.font as font
 
 window = tk.Tk()
-#helv36 = tk.Font(family='Helvetica', size=36, weight='bold')
 window.title("Facial recognition system")
 window.geometry('1600x900')
-# dialog_title = 'Thoát'
-# dialog_text = 'Bạn muốn thoát?'
-#answer = messagebox.askquestion(dialog_title, dialog_text)
-#window.geometry('1280x720')
-window.configure(background='#F1FAEE') #LightBlue4
-#window.attributes('-fullscreen', True)
+window.configure(background='#F1FAEE')
 window.grid_rowconfigure(0, weight=1)
 window.grid_columnconfigure(0, weight=1)
 message = tk.Label(window, text="Facial recognition system" ,bg="#E63946"  ,fg="#F1FAEE"  ,width=48  ,height=2,font=('times', 30, 'bold'))
@@ -92,14 +82,14 @@ def TakeImages():
 
                 cv2.imshow('frame',img)
 
-            if cv2.waitKey(20) & 0xFF == ord('q') or sampleNum==100: #or sampleNum==100
+            if cv2.waitKey(2) & 0xFF == ord('q'):
                 break
-            elif sampleNum>100: #luu anh cho den khi dc 100 anh
+            elif sampleNum>100:
                 break
         cam.release()
         cv2.destroyAllWindows()
         res = "Ảnh đã được lưu với ID : " + Id +" - Tên : "+ name
-        print(sampleNum+ " ảnh đã được lưu với ID : " + Id +" - Tên : "+ name)
+        print(" ảnh đã được lưu với ID : " + Id +" - Tên : "+ name)
         row = [Id , name]
         with open('StudentDetails\StudentDetails.csv','a+') as csvFile:
             writer = csv.writer(csvFile)
@@ -118,11 +108,9 @@ def TrainImages():
     recognizer = cv2.face_LBPHFaceRecognizer.create()
     harcascadePath = "haarcascade_frontalface_default.xml"
     detector =cv2.CascadeClassifier(harcascadePath)
-    #Lấy các khuôn mặt và ID từ thư mục TrainingImage
     faces,Id = getImagesAndLabels("TrainingImage")
-    #Train model để trích xuất đặc trưng các khuôn mặt và gán
-    recognizer.train(faces, np.array(Id)) #creact & traing model
-    recognizer.save("TrainingImageLabel\Trainner.yml") # lưu model mới train vào thư mục
+    recognizer.train(faces, np.array(Id)) #creact & training model
+    recognizer.save("TrainingImageLabel\Trainner.yml")
     print("-----------")
     print("Hoàn thành huấn luyện mô hình")
     print("-----------")
@@ -130,30 +118,24 @@ def TrainImages():
     message.configure(text= res)
 
 def getImagesAndLabels(path):
-    #get the path of all the files in the folder
+    #get the path
     imagePaths=[os.path.join(path,f) for f in os.listdir(path)]
     print(imagePaths)
-    #create empth face list
     faces=[]
-    #create empty ID list
     Ids=[]
-    #now looping through all the image paths and loading the Ids and the images
     for imagePath in imagePaths:
-        #loading the image and converting it to gray scale
         pilImage=Image.open(imagePath).convert('L')
-        #Now we are converting the PIL image into numpy array
         imageNp=np.array(pilImage,'uint8')
-        #getting the Id from the image
         Id=int(os.path.split(imagePath)[-1].split(".")[1])
-        # extract the face from the training image sample
         faces.append(imageNp)
         Ids.append(Id)
     return faces,Ids
 
-acc=[] #nhum acurr
+acc=[]
+totalImage = 0
 
 def TrackImages():
-    recognizer = cv2.face.LBPHFaceRecognizer_create()#cv2.createLBPHFaceRecognizer() #nhum: pip install opencv-contrib-python
+    recognizer = cv2.face.LBPHFaceRecognizer_create()
     recognizer.read("TrainingImageLabel\Trainner.yml")
     harcascadePath = "haarcascade_frontalface_default.xml"
     faceCascade = cv2.CascadeClassifier(harcascadePath);
@@ -161,6 +143,11 @@ def TrackImages():
     cam = cv2.VideoCapture(0)
     font = cv2.FONT_HERSHEY_SIMPLEX
     col_names =  ['Id','Name','Date','Time']
+
+    path = "TrainingImage"
+    imagePaths = [os.path.join(path, f) for f in os.listdir(path)]
+    totalImage = len(imagePaths)
+    print(totalImage)
 
     attendance = pd.DataFrame(columns = col_names)
     while True:
@@ -171,7 +158,6 @@ def TrackImages():
         for(x,y,w,h) in faces:
             cv2.rectangle(im,(x,y),(x+w,y+h),(225,0,0),2)
 
-            # GET ACCURACY NHUM NGUYEN
             res = recognizer.predict(gray)
             if(res[1] <500):
                 confidence = float("{0:.2f}".format((100*(1-(res[1])/300))))
@@ -195,11 +181,7 @@ def TrackImages():
                 cv2.imwrite("ImagesUnknown\Image"+str(noOfFile) + ".jpg", im[y:y+h,x:x+w])
             cv2.putText(im,str(tt),(x,y+h), font, 1,(255,255,255),2)
         attendance=attendance.drop_duplicates(subset=['Id'],keep='first')
-
-        # NHUM NGUYEN = Print highest acc
         print("Realtime acc: " + dis)
-
-
         cv2.imshow('im',im)
         if (cv2.waitKey(1)==ord('q')):
             break
@@ -216,8 +198,6 @@ def TrackImages():
     #print(attendance)
     res=attendance
     message2.configure(text= res)
-
-#print("Highest: " + str((np.max(acc))))
 
 
 clearButton = tk.Button(window, text="Clear", command=clear  ,fg="#1D3557"  ,bg="#F1FAEE"  ,width=10  ,height=1 ,activebackground = "white" ,font=('times', 15))
