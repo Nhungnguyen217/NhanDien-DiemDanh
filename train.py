@@ -72,7 +72,7 @@ def TakeImages():
             ret, img = cam.read()
             img = cv2.flip(img, 1)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            faces = detector.detectMultiScale(gray, 1.3, 5)
+            faces = detector.detectMultiScale(gray, 1.2, 7) #1,3 5
             for (x,y,w,h) in faces:
                 cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
 
@@ -82,9 +82,9 @@ def TakeImages():
 
                 cv2.imshow('frame',img)
 
-            if cv2.waitKey(2) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-            elif sampleNum>100:
+            elif sampleNum>500:
                 break
         cam.release()
         cv2.destroyAllWindows()
@@ -111,9 +111,9 @@ def TrainImages():
     faces,Id = getImagesAndLabels("TrainingImage")
     recognizer.train(faces, np.array(Id)) #creact & training model
     recognizer.save("TrainingImageLabel\Trainner.yml")
-    print("-----------")
+    print("-------------------------------------------------------------")
     print("Hoàn thành huấn luyện mô hình")
-    print("-----------")
+    print("-------------------------------------------------------------")
     res = "Train thành công" #+",".join(str(f) for f in Id)
     message.configure(text= res)
 
@@ -153,7 +153,7 @@ def TrackImages():
     while True:
         ret, im =cam.read()
         gray=cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-        faces = faceCascade.detectMultiScale(gray, 1.2, 5)
+        faces = faceCascade.detectMultiScale(gray, 1.2, 7)
 
         for(x,y,w,h) in faces:
             cv2.rectangle(im,(x,y),(x+w,y+h),(225,0,0),2)
@@ -185,7 +185,8 @@ def TrackImages():
         cv2.imshow('im',im)
         if (cv2.waitKey(1)==ord('q')):
             break
-    print("Highest: " + str((np.max(acc))))
+    print("-------------------------------------------------------------")
+    print('Highest: ' + str((np.max(acc))))
 
     ts = time.time()
     date = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
@@ -214,7 +215,6 @@ quitWindow = tk.Button(window, text="Exit", command=window.destroy  ,fg="#F1FAEE
 quitWindow.place(x=1100, y=500)
 copyWrite = tk.Text(window, background=window.cget("background"), borderwidth=0,font=('times', 30, 'italic bold underline'))
 copyWrite.tag_configure("superscript", offset=10)
-# copyWrite.insert("insert", "He thong  ","", "Tahn", "superscript")
 copyWrite.configure(state="disabled",fg="white"  )
 copyWrite.pack(side="left")
 copyWrite.place(x=800, y=750)
